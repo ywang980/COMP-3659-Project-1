@@ -9,8 +9,9 @@
 char memory[MAX_MEMORY];
 int currMemUse = 0;
 
-const char *promptMsg = "Enter a command:\n\0 ";
-const char *errorMsg = "Invalid input, try again.\n\0";
+const char *promptMsg = "\nEnter a command:\n\0 ";
+const char *invalidInputMsg = "Invalid input, try again.\n\0";
+const char *bufferOverflowMsg = "Input length exceeds buffer limit, try again.\n\0";
 const char *exitMsg = "exit\0";
 
 typedef struct Command
@@ -35,10 +36,17 @@ typedef struct CommandLine
     int bgFlag;
 } CommandLine;
 
+void printCmdLine(CommandLine *);
+void listArgV(CommandLine *);
+void printArgV(Command *);
+
+int readCmdLine(CommandLine *, char *);
+void initCmdLine(CommandLine *);
 int readInput(char *);
-void flushStdInput(char *);
+void flushInput(char *);
 
 int strlen(const char *);
+int strncmp(const char *str1, const char *str2, int num);
 int strchr(const char *, int, char);
 char *allocateStr(int);
 void strncpy(const char *, char *, int);
@@ -57,6 +65,7 @@ void addFilePath(CommandLine *, const char *, char, int, int);
 void toggleSpCharFlag(CommandLine *, char);
 void updateValSpChar(char *, char);
 
+void tokenizeCommandAll(CommandLine *);
 void tokenizeCommand(Command *, const char *);
 int findNextDelim(const char *, int);
 void addCmdArg(Command *, const char *, int, int);
@@ -65,43 +74,91 @@ int main()
 {
     CommandLine commandLine;
     char cmdLineStr[MAX_BUFFER_LEN];
+    int validCmdLine, tokenizeError;
 
-    // initialize commandLine
-    write(1, promptMsg, strlen(promptMsg));
-    int validCmdLine = read(0, cmdLineStr, MAX_BUFFER_LEN);
-    // while (strcmp(cmdLineStr, exitMsg) != 0)
+    validCmdLine = readCmdLine(&commandLine, cmdLineStr);
+    while (strncmp(cmdLineStr, exitMsg, strlen(exitMsg)) != 0 && cmdLineStr[strlen(exitMsg) != '\n'])
     {
         if (validCmdLine)
         {
-            tokenizeCommandLine(&commandLine, cmdLineStr);
-            // tokenizeCommands(&commandLine);
-            // runCommands
-            // re-initialize CommandLine
+            tokenizeError = tokenizeCommandLine(&commandLine, cmdLineStr);
+            if (tokenizeError != -1)
+            {
+                tokenizeCommandAll(&commandLine);
+                printCmdLine(&commandLine);
+                // runCommands;
+            }
+            else
+                write(1, invalidInputMsg, strlen(invalidInputMsg));
         }
         else
-            write(1, promptMsg, strlen(errorMsg));
+            write(1, bufferOverflowMsg, strlen(bufferOverflowMsg));
 
-        // clear buffer
-        write(1, promptMsg, strlen(promptMsg));
-        validCmdLine = read(0, cmdLineStr, MAX_BUFFER_LEN);
+        validCmdLine = readCmdLine(&commandLine, cmdLineStr);
     }
 
     return 0;
+}
+
+void printCmdLine(CommandLine *commandLine)
+{
+    printf("\ncommandc: %d\n", commandLine->commandc);
+    listArgV(commandLine);
+    printf("\ninput flag: %d, input filePath: %s\n", commandLine->input.flag, commandLine->input.filePath);
+    printf("output flag: %d, output filePath: %s\n", commandLine->output.flag, commandLine->output.filePath);
+    printf("background flag: %d\n", commandLine->bgFlag);
+}
+
+void listArgV(CommandLine *commandLine)
+{
+    for (int i = 0; i < commandLine->commandc; i++)
+    {
+        printf("\ncommand %d: %s, argc: %d\n", i, commandLine->commands[i].cmdStr, commandLine->commands[i].argc);
+        printArgV(&(commandLine->commands[i]));
+    }
+}
+
+void printArgV(Command *command)
+{
+    for (int i = 0; i < command->argc; i++)
+        printf("argv %d: %s\n", i, command->argv[i]);
+}
+
+int readCmdLine(CommandLine *commandLine, char *cmdLineStr)
+{
+    initCmdLine(commandLine);
+    write(1, promptMsg, strlen(promptMsg));
+    return readInput(cmdLineStr);
+}
+
+void initCmdLine(CommandLine *commandLine)
+{
+    commandLine->commandc = 0;
+    commandLine->input.flag = 0;
+    commandLine->input.filePath = NULL;
+    commandLine->output.flag = 0;
+    commandLine->output.filePath = NULL;
+    commandLine->bgFlag = 0;
 }
 
 int readInput(char *buffer)
 {
     if (read(0, buffer, MAX_BUFFER_LEN) == MAX_BUFFER_LEN && buffer[MAX_BUFFER_LEN - 1] != '\n')
     {
-        // flush input
+        flushInput(buffer);
         return 0;
     }
 
     return 1;
 }
 
-void flushStdInput(char *buffer)
+void flushInput(char *buffer)
 {
+    read(0, buffer, 1);
+    while (buffer[0] != '\n')
+    {
+        read(0, buffer, 1);
+    }
 }
 
 int strlen(const char *str)
@@ -112,6 +169,26 @@ int strlen(const char *str)
         len++;
     }
     return len;
+}
+
+int strncmp(const char *str1, const char *str2, int num)
+{
+    for (int i = 0; i < num; i++)
+    {
+        if (!str1[i] && !str2[i])
+            return 0;
+        else if (!str1[i])
+            return -1;
+        else if (!str2[i])
+            return 1;
+
+        if (str1[i] > str2[i])
+            return 1;
+        else if (str2[i] > str1[i])
+            return -1;
+    }
+
+    return 0;
 }
 
 int strchr(const char *str, int start, char target)
@@ -286,6 +363,15 @@ void updateValSpChar(char *valSpChar, char spChar)
     for (; valSpChar[i] != spChar; i++)
         valSpChar[i] = '0';
     valSpChar[i] = '0';
+}
+
+void tokenizeCommandAll(CommandLine *commandLine)
+{
+    for (int i = 0; i < commandLine->commandc; i++)
+    {
+        commandLine->commands[i].argc = 0;
+        tokenizeCommand(&(commandLine->commands[i]), commandLine->commands[i].cmdStr);
+    }
 }
 
 void tokenizeCommand(Command *command, const char *cmdStr)
