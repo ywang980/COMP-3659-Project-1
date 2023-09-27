@@ -4,10 +4,10 @@
 #define MAX_ARGS 10
 #define MAX_COMMANDS 10
 #define MAX_BUFFER_LEN 2048
-#define MAX_MEMORY 2048
+#define MAX_HEAP_LEN 2048
 
-char memory[MAX_MEMORY];
-int currMemUse = 0;
+char heap[MAX_HEAP_LEN];
+int currHeapUse = 0;
 
 const char *promptMsg = "\nEnter a command:\n\0 ";
 const char *invalidInputMsg = "Invalid input, try again.\n\0";
@@ -44,6 +44,7 @@ int readCmdLine(CommandLine *, char *);
 void initCmdLine(CommandLine *);
 int readInput(char *);
 void flushInput(char *);
+void resetHeap();
 
 int strlen(const char *);
 int strncmp(const char *str1, const char *str2, int num);
@@ -161,6 +162,10 @@ void flushInput(char *buffer)
     }
 }
 
+void resetHeap(){
+    currHeapUse = 0;
+}
+
 int strlen(const char *str)
 {
     int len = 0;
@@ -204,9 +209,9 @@ int strchr(const char *str, int start, char target)
 
 char *allocateStr(int len)
 {
-    char *st = &memory[currMemUse];
-    memory[currMemUse + len] = '\0';
-    currMemUse += (len + 1);
+    char *st = &heap[currHeapUse];
+    heap[currHeapUse + len] = '\0';
+    currHeapUse += (len + 1);
     return st;
 }
 
