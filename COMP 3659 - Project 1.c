@@ -162,7 +162,8 @@ void flushInput(char *buffer)
     }
 }
 
-void resetHeap(){
+void resetHeap()
+{
     currHeapUse = 0;
 }
 
