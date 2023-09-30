@@ -3,6 +3,9 @@
         "types and constants.h": "c",
         "unistd.h": "c",
         "literals&heap.h": "c",
-        "commandline.h": "c"
+        "commandline.h": "c",
+        "types.h": "c",
+        "shell.h": "c",
+        "string.h": "c"
     }
 }

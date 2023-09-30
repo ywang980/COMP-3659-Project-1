@@ -1,5 +1,4 @@
 #include "CommandLine.h"
-#include "String.h"
 
 void initCmdLine(CommandLine *commandLine)
 {
@@ -33,7 +32,9 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *cmdLineStr)
             if (!validSpChar(valSpChar, cmdLineStr[curr]))
                 return -1;
 
-            processSpChar(commandLine, cmdLineStr, start, curr, next, valSpChar);
+            if (processSpChar(commandLine, cmdLineStr, start, curr, next, valSpChar) == -1)
+                return -1;
+
             start = next;
             curr = findNextSpChar(cmdLineStr, start);
             next = findNextInput(cmdLineStr, curr);
@@ -92,12 +93,13 @@ int findNextInput(const char *cmdLineStr, int curr)
         return -1;
 }
 
-void processSpChar(CommandLine *commandLine, const char *cmdLineStr, int start, int curr, int next, char *valSpChar)
+int processSpChar(CommandLine *commandLine, const char *cmdLineStr, int start, int curr, int next, char *valSpChar)
 {
     char spChar = cmdLineStr[curr];
+    int error = 0;
 
     if (spCharFlagsOff(commandLine))
-        addCmd(commandLine, cmdLineStr, start, curr - start);
+        error = addCmd(commandLine, cmdLineStr, start, curr - start);
 
     if (spChar == '<' || spChar == '>')
     {
@@ -110,6 +112,8 @@ void processSpChar(CommandLine *commandLine, const char *cmdLineStr, int start, 
         toggleSpCharFlag(commandLine, cmdLineStr[curr]);
         updateValSpChar(valSpChar, cmdLineStr[curr]);
     }
+
+    return error;
 }
 
 int spCharFlagsOff(CommandLine *commandLine)
@@ -117,12 +121,21 @@ int spCharFlagsOff(CommandLine *commandLine)
     return (!commandLine->input.flag && !commandLine->output.flag && !commandLine->bgFlag);
 }
 
-void addCmd(CommandLine *commandLine, const char *cmdLineStr, int start, int len)
+int addCmd(CommandLine *commandLine, const char *cmdLineStr, int start, int len)
 {
     commandLine->commandc++;
-    int cmdIndex = commandLine->commandc - 1;
-    commandLine->commands[cmdIndex].cmdStr = allocateStr(len);
-    strncpy(&cmdLineStr[start], commandLine->commands[cmdIndex].cmdStr, len);
+    if (commandLine->commandc > MAX_COMMANDS)
+    {
+        write(1, commandCountOverflowMsg, strlen(commandCountOverflowMsg));
+        return -1;
+    }
+    else
+    {
+        int cmdIndex = commandLine->commandc - 1;
+        commandLine->commands[cmdIndex].cmdStr = allocateStr(len);
+        strncpy(&cmdLineStr[start], commandLine->commands[cmdIndex].cmdStr, len);
+    }
+    return 0;
 }
 
 void addFilePath(CommandLine *commandLine, const char *cmdLineStr, char reDirSign, int start, int len)
@@ -155,16 +168,19 @@ void updateValSpChar(char *valSpChar, char spChar)
     valSpChar[i] = '0';
 }
 
-void tokenizeCommandAll(CommandLine *commandLine)
+int tokenizeCommandAll(CommandLine *commandLine)
 {
     for (int i = 0; i < commandLine->commandc; i++)
     {
         commandLine->commands[i].argc = 0;
-        tokenizeCommand(&(commandLine->commands[i]), commandLine->commands[i].cmdStr);
+        if (tokenizeCommand(&(commandLine->commands[i]), commandLine->commands[i].cmdStr) == -1)
+            return -1;
     }
+
+    return 0;
 }
 
-void tokenizeCommand(Command *command, const char *cmdStr)
+int tokenizeCommand(Command *command, const char *cmdStr)
 {
     int start = flushWhiteSp(cmdStr, 0);
     int nextDelim, len;
@@ -173,9 +189,12 @@ void tokenizeCommand(Command *command, const char *cmdStr)
     {
         nextDelim = findNextDelim(cmdStr, start);
         len = nextDelim - start;
-        addCmdArg(command, cmdStr, start, len);
+        if (addCmdArg(command, cmdStr, start, len) == -1)
+            return -1;
         start = flushWhiteSp(cmdStr, nextDelim);
     }
+
+    return 0;
 }
 
 int findNextDelim(const char *str, int start)
@@ -186,12 +205,43 @@ int findNextDelim(const char *str, int start)
     return curr;
 }
 
-void addCmdArg(Command *command, const char *cmdStr, int start, int len)
+int addCmdArg(Command *command, const char *cmdStr, int start, int len)
 {
     command->argc++;
-    int argIndex = command->argc - 1;
-    command->argv[argIndex] = allocateStr(len);
-    strncpy(&cmdStr[start], command->argv[argIndex], len);
+    if (command->argc > MAX_ARGS)
+    {
+        write(1, commandArgOverflowMsg, strlen(commandArgOverflowMsg));
+        return -1;
+    }
+    else
+    {
+        int argIndex = command->argc - 1;
+        command->argv[argIndex] = allocateStr(len);
+        strncpy(&cmdStr[start], command->argv[argIndex], len);
+    }
+    return 0;
+}
+
+// void runCommandAll(CommandLine *commandLine) {}
+
+void runCommand(CommandLine *commandLine)
+{
+    int pid = fork();
+    int status;
+
+    if (pid == -1)
+    {
+        // print fork fail message
+        write(1, forkFailMsg, strlen(forkFailMsg));
+        return;
+    }
+    else if (pid == 0)
+    {
+        if (execve(commandLine->commands[0].argv[0], commandLine->commands[0].argv, NULL) == -1)
+            write(1, execveFailMsg, strlen(execveFailMsg));
+    }
+    else
+        waitpid(pid, &status, 0);
 }
 
 void printCmdLine(CommandLine *commandLine)

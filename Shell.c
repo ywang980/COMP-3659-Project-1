@@ -1,26 +1,24 @@
 #include "Shell.h"
-#include "CommandLine.h"
-#include "String.h"
-#include "Literals&Heap.h"
 
 int main()
 {
     CommandLine commandLine;
     char cmdLineStr[MAX_BUFFER_LEN];
-    int validCmdLine, tokenizeError;
+    int validCmdLineLen;
+    // int validCmdLineLen, tokenizeError;
 
     initCmdLine(&commandLine);
-    validCmdLine = readCmdLine(cmdLineStr);
+    validCmdLineLen = readCmdLine(cmdLineStr);
     while (strncmp(cmdLineStr, exitMsg, strlen(exitMsg)) != 0 && cmdLineStr[strlen(exitMsg) != '\n'])
     {
-        if (validCmdLine)
+        if (validCmdLineLen)
         {
-            tokenizeError = tokenizeCommandLine(&commandLine, cmdLineStr);
-            if (tokenizeError != -1)
+            // tokenizeError = tokenizeCommandLine(&commandLine, cmdLineStr);
+            if (tokenizeCommandLine(&commandLine, cmdLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1)
             {
-                tokenizeCommandAll(&commandLine);
                 printCmdLine(&commandLine);
-                // runCommands;
+                // runCommandAll
+                runCommand(&commandLine);
             }
             else
                 write(1, invalidInputMsg, strlen(invalidInputMsg));
@@ -29,7 +27,7 @@ int main()
             write(1, bufferOverflowMsg, strlen(bufferOverflowMsg));
 
         initCmdLine(&commandLine);
-        validCmdLine = readCmdLine(cmdLineStr);
+        validCmdLineLen = readCmdLine(cmdLineStr);
     }
 
     return 0;
