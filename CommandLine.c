@@ -193,6 +193,7 @@ int tokenizeCommand(Command *command, const char *cmdStr)
             return -1;
         start = flushWhiteSp(cmdStr, nextDelim);
     }
+    command->argv[command->argc] = NULL;
 
     return 0;
 }
@@ -250,7 +251,7 @@ void printCmdLine(CommandLine *commandLine)
     listArgV(commandLine);
     printf("\ninput flag: %d, input filePath: %s\n", commandLine->input.flag, commandLine->input.filePath);
     printf("output flag: %d, output filePath: %s\n", commandLine->output.flag, commandLine->output.filePath);
-    printf("background flag: %d\n", commandLine->bgFlag);
+    printf("background flag: %d\n\n", commandLine->bgFlag);
 }
 
 void listArgV(CommandLine *commandLine)
