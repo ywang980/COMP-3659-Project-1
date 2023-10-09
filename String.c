@@ -1,6 +1,3 @@
-// #include <sys/types.h>
-
-// #include "Literals&Heap.h"
 #include "String.h"
 
 int strlen(const char *str)
@@ -61,4 +58,9 @@ void strncpy(const char *src, char *dst, int len)
     }
 
     dst[i] = '\0';
+}
+
+void printError(const char *msg)
+{
+    write(2, msg, strlen(msg));
 }

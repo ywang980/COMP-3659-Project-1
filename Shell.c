@@ -3,40 +3,37 @@
 int main()
 {
     CommandLine commandLine;
-    char cmdLineStr[MAX_BUFFER_LEN];
-    int validCmdLineLen;
-    // int validCmdLineLen, tokenizeError;
+    char commandLineStr[MAX_BUFFER_LEN];
+    int validCommandLineLen;
 
-    initCmdLine(&commandLine);
-    validCmdLineLen = readCmdLine(cmdLineStr);
-    while (strncmp(cmdLineStr, exitMsg, strlen(exitMsg)) != 0 && cmdLineStr[strlen(exitMsg) != '\n'])
+    initializeCommandLine(&commandLine);
+    validCommandLineLen = readCommandLine(commandLineStr);
+    while (strncmp(commandLineStr, exitPrompt, strlen(exitPrompt)) != 0 && commandLineStr[strlen(exitPrompt) != '\n'])
     {
-        if (validCmdLineLen)
+        if (validCommandLineLen)
         {
-            // tokenizeError = tokenizeCommandLine(&commandLine, cmdLineStr);
-            if (tokenizeCommandLine(&commandLine, cmdLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1)
+            if (tokenizeCommandLine(&commandLine, commandLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1)
             {
-                printCmdLine(&commandLine);
-                // runCommandAll
-                runCommand(&commandLine);
+                printCommandLine(&commandLine);
+                runCommandLine(&commandLine);
             }
             else
-                write(1, invalidInputMsg, strlen(invalidInputMsg));
+                printError(invalidInput);
         }
         else
-            write(1, bufferOverflowMsg, strlen(bufferOverflowMsg));
+            printError(bufferOverflow);
 
-        initCmdLine(&commandLine);
-        validCmdLineLen = readCmdLine(cmdLineStr);
+        initializeCommandLine(&commandLine);
+        validCommandLineLen = readCommandLine(commandLineStr);
     }
 
     return 0;
 }
 
-int readCmdLine(char *cmdLineStr)
+int readCommandLine(char *commandLineStr)
 {
     write(1, promptMsg, strlen(promptMsg));
-    return readInput(cmdLineStr);
+    return readInput(commandLineStr);
 }
 
 int readInput(char *buffer)
