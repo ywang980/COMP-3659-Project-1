@@ -14,7 +14,7 @@ int main()
         {
             if (tokenizeCommandLine(&commandLine, commandLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1)
             {
-                printCommandLine(&commandLine);
+                // printCommandLine(&commandLine);
                 runCommandLine(&commandLine);
             }
             else

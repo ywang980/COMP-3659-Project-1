@@ -65,6 +65,15 @@ int findNextSpChar(const char *str, int start)
     return curr;
 }
 
+int findfPathEnd(const char *str, int start)
+{
+    int curr = start;
+    for (; str[curr] != ' ' && !isSpChar(str[curr]); curr++)
+        ;
+
+    return curr;
+}
+
 int validSpChar(const char *valSpChar, char spChar)
 {
     return strchr(valSpChar, 0, spChar);
@@ -99,7 +108,7 @@ int processSpChar(CommandLine *commandLine, const char *commandLineStr, int star
 
     if (spChar == '<' || spChar == '>')
     {
-        int fPathEnd = findNextSpChar(commandLineStr, next);
+        int fPathEnd = findfPathEnd(commandLineStr, next);
         addFilePath(commandLine, commandLineStr, spChar, next, fPathEnd - next);
     }
 
@@ -169,6 +178,7 @@ int tokenizeCommandAll(CommandLine *commandLine)
     for (int i = 0; i < commandLine->commandc; i++)
     {
         commandLine->commands[i].argc = 0;
+        // commandLine->commands[i].pid = 0;
         if (tokenizeCommand(&(commandLine->commands[i]), commandLine->commands[i].commandString) == -1)
             return -1;
     }
@@ -221,78 +231,77 @@ int addCommandArg(Command *command, const char *commandString, int start, int le
 
 void runCommandLine(CommandLine *commandLine)
 {
-    if (createPipelines(commandLine) == -1)
+    int pid;
+    int stdin = dup(INPUT);
+    int stdout = dup(OUTPUT);
+    printf("stdin: %d, stdout: %d\n", stdin, stdout);
+
+    for (int i = 0; i < commandLine->commandc; i++)
     {
-        printError(pipeFail);
-        return;
+        printf("i has a value of: %d", i);
+        if ((i < commandLine->commandc - 1) && (createPipe(commandLine, i) == -1))
+            return;
+        pid = createChildProcess(commandLine, i);
+
+        if (pid == -1)
+            return;
+        else if (pid == 0 && (runCommand(commandLine, i) == -1))
+            return;
+        else
+        {
+            printf("Process %d has a process ID of: %d\n", i + 1, pid);
+            commandLine->commands[i].pid = pid;
+        }
     }
 
-    runCommandsAll(commandLine);
+    if (!commandLine->bgFlag)
+        cleanupChildren(commandLine);
+
+    closePipesParent(commandLine);
+    dup2(stdin, INPUT);
+    dup2(stdout, OUTPUT);
 }
 
-int createPipelines(CommandLine *commandLine)
+int createPipe(CommandLine *commandLine, int pipeIndex)
 {
-    for (int i = 0; i < (commandLine->commandc - 1); i++)
+    int error = pipe(commandLine->pipes[pipeIndex]);
+    if (error == -1)
+        printError(pipeFail);
+
+    return error;
+}
+
+int createChildProcess(CommandLine *commandLine, int commandIndex)
+{
+    int pid = fork();
+    if (pid == -1)
+        printError(forkFail);
+    return pid;
+}
+
+int runCommand(CommandLine *commandLine, int commandIndex)
+{
+    if (reDirectRequired(commandLine, commandIndex) && (reDirectCommand(commandLine, commandIndex) == -1))
+        return -1;
+    printf("About to pipe process %d\n", commandIndex + 1);
+
+    pipeCommand(commandLine, commandIndex);
+
+    printf("About to run process %d\n", commandIndex + 1);
+
+    if (execve(commandLine->commands[commandIndex].argv[0], commandLine->commands[commandIndex].argv, NULL) == -1)
     {
-        if (pipe(commandLine->pipes[i]) == -1)
-            return -1;
+        printError(execveFail);
+        return -1;
     }
 
     return 0;
 }
 
-void runCommandsAll(CommandLine *commandLine)
+int reDirectRequired(CommandLine *commandLine, int commandIndex)
 {
-    int status;
-
-    // Problem: i isn't updating?
-    for (int i = 0; i < commandLine->commandc; i++)
-    {
-        commandLine->commands[i].pid = fork();
-
-        if (commandLine->commands[i].pid == -1)
-        {
-            printError(forkFail);
-            return;
-        }
-        else if (commandLine->commands[i].pid == 0)
-        {
-            if (runCommand(commandLine, i) == -1)
-                return;
-        }
-        else if (!commandLine->bgFlag)
-        {
-            // if (waitpid(commandLine->commands[i].pid, &status, 0) == -1)
-            // {
-            //     printError(waitpidFail);
-            //     return;
-            // }
-        }
-
-        // close all pipes, run in initialize?
-    }
-}
-
-int runCommand(CommandLine *commandLine, int commandIndex)
-{
-    int error = 0;
-
-    if ((commandIndex == 0 && commandLine->input.flag) ||
-        (commandIndex == commandLine->commandc - 1 && commandLine->output.flag))
-    {
-        if (reDirectCommand(commandLine, commandIndex) == -1)
-            return -1;
-    }
-
-    pipeCommand(commandLine, commandIndex);
-
-    if (execve(commandLine->commands[commandIndex].argv[0], commandLine->commands[commandIndex].argv, NULL) == -1)
-    {
-        printError(execveFail);
-        error = -1;
-    }
-
-    return error;
+    return ((commandIndex == 0 && commandLine->input.flag) ||
+            (commandIndex == commandLine->commandc - 1 && commandLine->output.flag));
 }
 
 int reDirectCommand(CommandLine *commandLine, int commandIndex)
@@ -304,7 +313,6 @@ int reDirectCommand(CommandLine *commandLine, int commandIndex)
         fd = open(commandLine->input.filePath, O_RDONLY);
         if (fd == -1)
         {
-            printf("For input + output redirect, opening input file fails?\n");
             printError(openFail);
             return -1;
         }
@@ -329,17 +337,47 @@ int reDirectCommand(CommandLine *commandLine, int commandIndex)
 
 void pipeCommand(CommandLine *commandLine, int commandIndex)
 {
-    if (commandIndex > 0)
-    {
-        close(commandLine->pipes[commandIndex - 1][OUTPUT]);
-        dup2(commandLine->pipes[commandIndex - 1][INPUT], INPUT);
-    }
-
     if (commandIndex < commandLine->commandc - 1)
     {
         close(commandLine->pipes[commandIndex][INPUT]);
         dup2(commandLine->pipes[commandIndex][OUTPUT], OUTPUT);
+        close(commandLine->pipes[commandIndex][OUTPUT]);
     }
+
+    if (commandIndex > 0)
+    {
+        close(commandLine->pipes[commandIndex - 1][OUTPUT]);
+        dup2(commandLine->pipes[commandIndex - 1][INPUT], INPUT);
+        close(commandLine->pipes[commandIndex - 1][INPUT]);
+    }
+
+    // printf("Got this far in piping child process: %d\n", commandIndex + 1);
+
+    printf("Finished piping child process: %d\n", commandIndex + 1);
+}
+
+void closePipesParent(CommandLine *commandLine)
+{
+    for (int i = 0; i < commandLine->commandc - 1; i++)
+    {
+        close(commandLine->pipes[i][INPUT]);
+        close(commandLine->pipes[i][OUTPUT]);
+    }
+}
+
+void cleanupChildren(CommandLine *commandLine)
+{
+    int error = 0;
+    int status;
+    for (int i = 0; i < commandLine->commandc; i++)
+    {
+        if (waitpid(commandLine->commands[i].pid, &status, 0) == -1)
+            error = -1;
+        printf("\n1 Child process cleaned. pid: %d\n", commandLine->commands[i].pid);
+    }
+
+    if (error == -1)
+        printError(waitpidFail);
 }
 
 void printCommandLine(CommandLine *commandLine)

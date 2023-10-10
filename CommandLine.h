@@ -39,7 +39,7 @@ typedef struct CommandLine
     ReDirect input;
     ReDirect output;
     int bgFlag;
-    int pipes[MAX_COMMANDS - 2][2];
+    int pipes[MAX_COMMANDS][2];
 } CommandLine;
 
 void initializeCommandLine(CommandLine *);
@@ -48,6 +48,7 @@ int tokenizeCommandLine(CommandLine *, const char *);
 int flushWhiteSp(const char *, int);
 int isSpChar(char);
 int findNextSpChar(const char *, int);
+int findfPathEnd(const char *, int);
 int validSpChar(const char *, char);
 int findNextInput(const char *, int);
 
@@ -64,12 +65,16 @@ int findNextDelim(const char *, int);
 int addCommandArg(Command *, const char *, int, int);
 
 void runCommandLine(CommandLine *);
-// int processReDirect(CommandLine *);
-int createPipelines(CommandLine *);
-void runCommandsAll(CommandLine *);
+int createPipe(CommandLine *, int);
+int createChildProcess(CommandLine *, int);
+
 int runCommand(CommandLine *, int);
+int reDirectRequired(CommandLine *, int);
 int reDirectCommand(CommandLine *, int);
 void pipeCommand(CommandLine *, int);
+
+void closePipesParent(CommandLine *);
+void cleanupChildren(CommandLine *);
 
 // for debug only
 void printCommandLine(CommandLine *);
@@ -83,6 +88,6 @@ static const char *openFail = "\nopen failed. Command line discarded.\n\0";
 static const char *pipeFail = "\npipe failed. Command line discarded.\n\0";
 static const char *forkFail = "\nfork failed. Command line discarded.\n\0";
 static const char *execveFail = "\nexecve failed. Command line discarded.\n\0";
-static const char *waitpidFail = "\nwaitpid failed. Command line discarded.\n\0";
+static const char *waitpidFail = "\nwaitpid failed.\n\0";
 
 #endif
