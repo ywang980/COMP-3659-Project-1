@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+// #include <signal.h>
 
 #include "String.h"
 #include "Heap.h"
@@ -40,6 +41,8 @@ typedef struct CommandLine
     ReDirect output;
     int bgFlag;
     int pipes[MAX_COMMANDS][2];
+    int pipesOpen;
+    int childProcessCount;
 } CommandLine;
 
 void initializeCommandLine(CommandLine *);
@@ -66,7 +69,7 @@ int addCommandArg(Command *, const char *, int, int);
 
 void runCommandLine(CommandLine *);
 int createPipe(CommandLine *, int);
-int createChildProcess(CommandLine *, int);
+void closePipe(CommandLine *, int);
 
 int runCommand(CommandLine *, int);
 int reDirectRequired(CommandLine *, int);
@@ -74,7 +77,7 @@ int reDirectCommand(CommandLine *, int);
 void pipeCommand(CommandLine *, int);
 
 void closePipesParent(CommandLine *);
-void cleanupChildren(CommandLine *);
+void waitForChildren(CommandLine *);
 
 // for debug only
 void printCommandLine(CommandLine *);

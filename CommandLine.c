@@ -8,6 +8,8 @@ void initializeCommandLine(CommandLine *commandLine)
     commandLine->output.flag = 0;
     commandLine->output.filePath = NULL;
     commandLine->bgFlag = 0;
+    commandLine->pipesOpen = 0;
+    commandLine->childProcessCount = 0;
 }
 
 int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
@@ -15,7 +17,7 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
     char valSpChar[] = {'|', '<', '>', '&', '\n', '\0'};
     int start = flushWhiteSp(commandLineStr, 0);
 
-    if (isSpChar(commandLineStr[start]) && commandLineStr[start] != '\n')
+    if (isSpChar(commandLineStr[start]) && commandLineStr[start] != '\n') // Can't start with special char
         return -1;
     else
     {
@@ -28,7 +30,7 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
         {
             if (!validSpChar(valSpChar, commandLineStr[curr])) // Valid special char
                 return -1;
-            if (processSpChar(commandLine, commandLineStr, start, curr, next, valSpChar) == -1) // Pipeline tokenize
+            if (processSpChar(commandLine, commandLineStr, start, curr, next, valSpChar) == -1) // Exceed max commands limit
                 return -1;
 
             start = next;
@@ -178,7 +180,6 @@ int tokenizeCommandAll(CommandLine *commandLine)
     for (int i = 0; i < commandLine->commandc; i++)
     {
         commandLine->commands[i].argc = 0;
-        // commandLine->commands[i].pid = 0;
         if (tokenizeCommand(&(commandLine->commands[i]), commandLine->commands[i].commandString) == -1)
             return -1;
     }
@@ -232,34 +233,34 @@ int addCommandArg(Command *command, const char *commandString, int start, int le
 void runCommandLine(CommandLine *commandLine)
 {
     int pid;
-    int stdin = dup(INPUT);
-    int stdout = dup(OUTPUT);
-    printf("stdin: %d, stdout: %d\n", stdin, stdout);
 
     for (int i = 0; i < commandLine->commandc; i++)
     {
-        printf("i has a value of: %d", i);
-        if ((i < commandLine->commandc - 1) && (createPipe(commandLine, i) == -1))
-            return;
-        pid = createChildProcess(commandLine, i);
+        if (i > 1)
+            closePipe(commandLine, i - 2);
 
+        if ((i < commandLine->commandc - 1) && (createPipe(commandLine, i) == -1))
+            goto cleanup;
+
+        pid = fork();
         if (pid == -1)
-            return;
+        {
+            printError(pipeFail);
+            goto cleanup;
+        }
         else if (pid == 0 && (runCommand(commandLine, i) == -1))
-            return;
+            _exit(0);
         else
         {
-            printf("Process %d has a process ID of: %d\n", i + 1, pid);
+            commandLine->childProcessCount++;
             commandLine->commands[i].pid = pid;
         }
     }
 
-    if (!commandLine->bgFlag)
-        cleanupChildren(commandLine);
-
+cleanup:
     closePipesParent(commandLine);
-    dup2(stdin, INPUT);
-    dup2(stdout, OUTPUT);
+    if (!commandLine->bgFlag)
+        waitForChildren(commandLine);
 }
 
 int createPipe(CommandLine *commandLine, int pipeIndex)
@@ -267,27 +268,24 @@ int createPipe(CommandLine *commandLine, int pipeIndex)
     int error = pipe(commandLine->pipes[pipeIndex]);
     if (error == -1)
         printError(pipeFail);
+    else
+        commandLine->pipesOpen++;
 
     return error;
 }
 
-int createChildProcess(CommandLine *commandLine, int commandIndex)
+void closePipe(CommandLine *commandLine, int pipeIndex)
 {
-    int pid = fork();
-    if (pid == -1)
-        printError(forkFail);
-    return pid;
+    close(commandLine->pipes[pipeIndex][INPUT]);
+    close(commandLine->pipes[pipeIndex][OUTPUT]);
 }
 
 int runCommand(CommandLine *commandLine, int commandIndex)
 {
     if (reDirectRequired(commandLine, commandIndex) && (reDirectCommand(commandLine, commandIndex) == -1))
         return -1;
-    printf("About to pipe process %d\n", commandIndex + 1);
 
     pipeCommand(commandLine, commandIndex);
-
-    printf("About to run process %d\n", commandIndex + 1);
 
     if (execve(commandLine->commands[commandIndex].argv[0], commandLine->commands[commandIndex].argv, NULL) == -1)
     {
@@ -350,30 +348,27 @@ void pipeCommand(CommandLine *commandLine, int commandIndex)
         dup2(commandLine->pipes[commandIndex - 1][INPUT], INPUT);
         close(commandLine->pipes[commandIndex - 1][INPUT]);
     }
-
-    // printf("Got this far in piping child process: %d\n", commandIndex + 1);
-
-    printf("Finished piping child process: %d\n", commandIndex + 1);
 }
 
 void closePipesParent(CommandLine *commandLine)
 {
-    for (int i = 0; i < commandLine->commandc - 1; i++)
+    for (int i = 0; i < 2 && i < commandLine->pipesOpen; i++)
     {
         close(commandLine->pipes[i][INPUT]);
         close(commandLine->pipes[i][OUTPUT]);
     }
 }
 
-void cleanupChildren(CommandLine *commandLine)
+void waitForChildren(CommandLine *commandLine)
 {
     int error = 0;
     int status;
-    for (int i = 0; i < commandLine->commandc; i++)
+    for (int i = 0; i < commandLine->childProcessCount; i++)
     {
+        // printf("Waiting on child process: %d with pid: %d\n", i, commandLine->commands[i].pid);
         if (waitpid(commandLine->commands[i].pid, &status, 0) == -1)
             error = -1;
-        printf("\n1 Child process cleaned. pid: %d\n", commandLine->commands[i].pid);
+        // printf("Cleaned up child process: %d with pid: %d\n", i, commandLine->commands[i].pid);
     }
 
     if (error == -1)
