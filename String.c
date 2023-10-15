@@ -1,6 +1,6 @@
 #include "String.h"
 
-int strlen(const char *str)
+int mystrlen(const char *str)
 {
     int len = 0;
     while (str[len])
@@ -10,7 +10,7 @@ int strlen(const char *str)
     return len;
 }
 
-int strncmp(const char *str1, const char *str2, int num)
+int mystrncmp(const char *str1, const char *str2, int num)
 {
     for (int i = 0; i < num; i++)
     {
@@ -30,9 +30,9 @@ int strncmp(const char *str1, const char *str2, int num)
     return 0;
 }
 
-int strchr(const char *str, int start, char target)
+int mystrchr(const char *str, int start, char target)
 {
-    for (int i = start; i < strlen(str); i++)
+    for (int i = start; i < mystrlen(str); i++)
     {
         if (str[i] == target)
             return 1;
@@ -49,7 +49,7 @@ char *allocateStr(int len)
     return st;
 }
 
-void strncpy(const char *src, char *dst, int len)
+void mystrncpy(const char *src, char *dst, int len)
 {
     int i = 0;
     for (; i < len; i++)
@@ -62,5 +62,5 @@ void strncpy(const char *src, char *dst, int len)
 
 void printError(const char *msg)
 {
-    write(2, msg, strlen(msg));
+    write(2, msg, mystrlen(msg));
 }

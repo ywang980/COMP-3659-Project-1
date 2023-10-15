@@ -8,7 +8,7 @@ int main()
 
     initializeCommandLine(&commandLine);
     validCommandLineLen = readCommandLine(commandLineStr);
-    while (strncmp(commandLineStr, exitPrompt, strlen(exitPrompt)) != 0 && commandLineStr[strlen(exitPrompt) != '\n'])
+    while (mystrncmp(commandLineStr, exitPrompt, mystrlen(exitPrompt)) != 0 && commandLineStr[mystrlen(exitPrompt) != '\n'])
     {
         if (validCommandLineLen)
         {
@@ -32,7 +32,7 @@ int main()
 
 int readCommandLine(char *commandLineStr)
 {
-    write(1, promptMsg, strlen(promptMsg));
+    write(1, promptMsg, mystrlen(promptMsg));
     return readInput(commandLineStr);
 }
 

@@ -78,7 +78,7 @@ int findfPathEnd(const char *str, int start)
 
 int validSpChar(const char *valSpChar, char spChar)
 {
-    return strchr(valSpChar, 0, spChar);
+    return mystrchr(valSpChar, 0, spChar);
 }
 
 int findNextInput(const char *commandLineStr, int curr)
@@ -140,7 +140,7 @@ int addCommand(CommandLine *commandLine, const char *commandLineStr, int start, 
     {
         int commandIndex = commandLine->commandc - 1;
         commandLine->commands[commandIndex].commandString = allocateStr(len);
-        strncpy(&commandLineStr[start], commandLine->commands[commandIndex].commandString, len);
+        mystrncpy(&commandLineStr[start], commandLine->commands[commandIndex].commandString, len);
     }
     return 0;
 }
@@ -154,7 +154,7 @@ void addFilePath(CommandLine *commandLine, const char *commandLineStr, char reDi
         reDirect = &(commandLine->output);
 
     reDirect->filePath = allocateStr(len);
-    strncpy(&commandLineStr[start], reDirect->filePath, len);
+    mystrncpy(&commandLineStr[start], reDirect->filePath, len);
 }
 
 void toggleSpCharFlag(CommandLine *commandLine, char spChar)
@@ -225,7 +225,7 @@ int addCommandArg(Command *command, const char *commandString, int start, int le
     {
         int argIndex = command->argc - 1;
         command->argv[argIndex] = allocateStr(len);
-        strncpy(&commandString[start], command->argv[argIndex], len);
+        mystrncpy(&commandString[start], command->argv[argIndex], len);
     }
     return 0;
 }
@@ -375,6 +375,7 @@ void waitForChildren(CommandLine *commandLine)
         printError(waitpidFail);
 }
 
+/*
 void printCommandLine(CommandLine *commandLine)
 {
     printf("\ncommandc: %d\n", commandLine->commandc);
@@ -398,3 +399,4 @@ void printArgV(Command *command)
     for (int i = 0; i < command->argc; i++)
         printf("argv %d: %s\n", i, command->argv[i]);
 }
+*/

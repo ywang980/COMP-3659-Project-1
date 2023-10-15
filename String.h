@@ -4,11 +4,11 @@
 #include <unistd.h>
 #include "Heap.h"
 
-int strlen(const char *);
-int strncmp(const char *, const char *, int);
-int strchr(const char *, int, char);
+int mystrlen(const char *);
+int mystrncmp(const char *, const char *, int);
+int mystrchr(const char *, int, char);
 char *allocateStr(int);
-void strncpy(const char *, char *, int);
+void mystrncpy(const char *, char *, int);
 void printError(const char *);
 
 #endif
