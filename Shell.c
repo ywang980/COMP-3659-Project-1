@@ -73,7 +73,7 @@ int readCommandLine(char *commandLineStr)
     
 	Purpose: read user message return succesful or failed read
 	
-	Input: buffer space to hold input
+	Input: buffer: buffer space to hold input
 	
 ???	Return: 1 on succesful read
             0 otherwise
@@ -96,7 +96,7 @@ int readInput(char *buffer)
     
 	Purpose: empty out buffer
 	
-	Input: buffer to empty
+	Input: buffer: buffer to empty
 	
 	Return:
             
