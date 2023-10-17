@@ -7,13 +7,9 @@
 * Source File: 	CommandLine.c
 * Due Date: 	October 6, 2023
 *
-* Purpose:		A program that emulates the Linux shell
-*
-* Details:		Will prompt user for commands and upon recieving a valid common execute
-*               the corresponding instruction. This will continue until exit command is
-*               entered which will then cause the program to terminate.
-*
-*               Any invalid commands will print out a error message.
+* Purpose:		A library with functions focused on proccessing the command line
+???????????
+* Details:		Will split user input into tokens to be proccessed.
 *
 * Assumptions and Limitations: 
 *              All valid user input will be specify the file path of the command
