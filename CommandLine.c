@@ -8,7 +8,7 @@
 * Due Date: 	October 6, 2023
 *
 * Purpose:		A library with functions focused on proccessing the command line
-???????????
+*???????????
 * Details:		Will split user input into tokens to be proccessed.
 *
 * Assumptions and Limitations: 
@@ -17,6 +17,17 @@
 
 #include "CommandLine.h"
 
+/*       
+    Function: initializeCommandLine
+    
+	Purpose: initialize values in commandLine
+	
+	Input: commnadLine: commandLine to be initialized
+	
+	Return: 
+
+    Assumptions and Limitations:
+*/
 void initializeCommandLine(CommandLine *commandLine)
 {
     commandLine->commandc = 0;
@@ -29,6 +40,19 @@ void initializeCommandLine(CommandLine *commandLine)
     commandLine->childProcessCount = 0;
 }
 
+/*       
+    Function: tokenizeCommandLine
+    
+	Purpose: split up command line input to proccesable pieces 
+	???????
+	Input: commnadLine: check max command size
+           commandLineStr: string to be proccessed
+	
+	Return: 0 on succesful tokenization
+            -1 on error
+
+    Assumptions and Limitations:
+*/
 int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
 {
     char valSpChar[] = {'|', '<', '>', '&', '\n', '\0'};
@@ -61,6 +85,18 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
     return 0;
 }
 
+/*       
+    Function: flushWhiteSp
+    
+	Purpose: clear part of a string to the end
+    
+	Input: str: string that will be cleared
+           start: starting point in string to be cleared
+	
+	Return: amount of string cleared
+
+    Assumptions and Limitations:
+*/
 int flushWhiteSp(const char *str, int start)
 {
     int curr = start;
@@ -69,11 +105,34 @@ int flushWhiteSp(const char *str, int start)
     return curr;
 }
 
+/*       
+    Function: isSpChar
+    
+	Purpose: check which special character a character is
+	
+	Input: target: character to be checked
+	
+	Return: ASCII value of special character
+
+    Assumptions and Limitations:
+*/
 int isSpChar(char target)
 {
     return (target == '|' || target == '>' || target == '<' || target == '&' || target == '\n');
 }
 
+/*       
+    Function: findNextSpChar
+    
+	Purpose: move through a string until a special character is hit
+	
+	Input: str: string to be searched through
+           start: starting point of string
+	
+	Return: the amount of characters gone through
+
+    Assumptions and Limitations:
+*/
 int findNextSpChar(const char *str, int start)
 {
     int curr = start;
@@ -84,6 +143,18 @@ int findNextSpChar(const char *str, int start)
     return curr;
 }
 
+/*       
+    Function: findfPathEnd
+    
+	Purpose: go through string until a whitespace is hit
+	
+	Input: str: string to be proccessed through
+           start: starting point of string
+	
+	Return: the amount of characters gone through
+
+    Assumptions and Limitations:
+*/
 int findfPathEnd(const char *str, int start)
 {
     int curr = start;
@@ -93,11 +164,34 @@ int findfPathEnd(const char *str, int start)
     return curr;
 }
 
+/*  ????????????
+    Function: validSpChar
+    
+	Purpose: call mystrchr going through the beginning of string
+	
+	Input: valSpChar: string to be proccessed through
+           spChar: spChar being searched for
+	
+	Return: position of spchar
+
+    Assumptions and Limitations:
+*/
 int validSpChar(const char *valSpChar, char spChar)
 {
     return mystrchr(valSpChar, 0, spChar);
 }
 
+/*  
+    Function: findNextInput
+    ???????????????????
+	Purpose: 
+	
+	Input: 
+	
+	Return: 
+
+    Assumptions and Limitations:
+*/
 int findNextInput(const char *commandLineStr, int curr)
 {
     if (commandLineStr[curr] == '\n')
@@ -116,7 +210,23 @@ int findNextInput(const char *commandLineStr, int curr)
     else
         return -1;
 }
+/*  
+    Function: processSpChar
+    
+	Purpose: sort proccessing depnding on special character recoeved
+	
+	Input: commandLine: Proccessing through command line
+           commandLineStr: ?????????????
+           start: passed to other functions
+           curr: passed to other functions
+           next: passed to other functions
+           valSpChar: special character to be checked
+	
+	Return: 0 on success
+            non-0 on error?????????
 
+    Assumptions and Limitations:
+*/
 int processSpChar(CommandLine *commandLine, const char *commandLineStr, int start, int curr, int next, char *valSpChar)
 {
     char spChar = commandLineStr[curr];
@@ -140,11 +250,37 @@ int processSpChar(CommandLine *commandLine, const char *commandLineStr, int star
     return error;
 }
 
+/*       
+    Function: spCharFlagsOFF
+    
+	Purpose: turn character flags off
+	
+	Input: commandLine: adjusting commandLine properties
+	
+	Return: ??????????????
+
+    Assumptions and Limitations:
+*/
 int spCharFlagsOff(CommandLine *commandLine)
 {
     return (!commandLine->input.flag && !commandLine->output.flag && !commandLine->bgFlag);
 }
 
+/*     
+    Function: addCommand
+    ??????????????????
+	Purpose: 
+	
+	Input: commandLine: 
+           commandLineStr:
+           start:
+           len:
+	
+	Return: -1 on error
+            0 otherwise
+
+    Assumptions and Limitations:
+*/
 int addCommand(CommandLine *commandLine, const char *commandLineStr, int start, int len)
 {
     commandLine->commandc++;
@@ -162,6 +298,20 @@ int addCommand(CommandLine *commandLine, const char *commandLineStr, int start, 
     return 0;
 }
 
+/*     
+    Function: addFilePath
+
+	Purpose: Adjust input or output of command
+	
+	Input: commandLine: to be changed
+           commandLineStr: string containing command
+           start: passed to next function
+           len: passed to next function
+	
+	Return:
+ 
+    Assumptions and Limitations:
+*/
 void addFilePath(CommandLine *commandLine, const char *commandLineStr, char reDirSign, int start, int len)
 {
     ReDirect *reDirect;
@@ -174,6 +324,20 @@ void addFilePath(CommandLine *commandLine, const char *commandLineStr, char reDi
     mystrncpy(&commandLineStr[start], reDirect->filePath, len);
 }
 
+/*     
+    Function: toggleSpCharFlag
+
+	Purpose: set flag for special character in command line
+	
+	Input: commandLine: to be changed
+           commandLineStr: string containing command
+           start: passed to next function
+           len: passed to next function
+	
+	Return: 
+
+    Assumptions and Limitations:
+*/
 void toggleSpCharFlag(CommandLine *commandLine, char spChar)
 {
     if (spChar == '<')
@@ -184,6 +348,18 @@ void toggleSpCharFlag(CommandLine *commandLine, char spChar)
         commandLine->bgFlag = 1;
 }
 
+/*     
+    Function: updateValSpChar
+
+	Purpose: Clear characters from string until special character
+	
+	Input: valSpChar: String to be adjusted
+           spChar: special character in string
+	
+	Return:
+
+    Assumptions and Limitations:
+*/
 void updateValSpChar(char *valSpChar, char spChar)
 {
     int i = 0;
@@ -192,6 +368,18 @@ void updateValSpChar(char *valSpChar, char spChar)
     valSpChar[i] = '0';
 }
 
+/*     
+    Function: tokenizeCommandAll
+
+	Purpose: ?????
+	
+	Input: commandLine: command line containing command
+	
+	Return: -1 on error
+            0 otherwise
+
+    Assumptions and Limitations:
+*/
 int tokenizeCommandAll(CommandLine *commandLine)
 {
     for (int i = 0; i < commandLine->commandc; i++)
@@ -204,6 +392,19 @@ int tokenizeCommandAll(CommandLine *commandLine)
     return 0;
 }
 
+/*     
+    Function: tokenizeCommand
+
+	Purpose: ?????
+	
+	Input: command: command to be tokenized
+           commandString:
+	
+	Return: -1 on error
+            0 otherwise
+            
+    Assumptions and Limitations:
+*/
 int tokenizeCommand(Command *command, const char *commandString)
 {
     int start = flushWhiteSp(commandString, 0);
@@ -222,6 +423,18 @@ int tokenizeCommand(Command *command, const char *commandString)
     return 0;
 }
 
+/*     
+    Function: findNextDelim
+
+	Purpose: find the distance from a point of the string to the next space
+	
+	Input: str: string to be checked
+           start: start of string to be proccessed
+	
+	Return: return length of string
+            
+    Assumptions and Limitations:
+*/
 int findNextDelim(const char *str, int start)
 {
     int curr = start;
@@ -230,6 +443,21 @@ int findNextDelim(const char *str, int start)
     return curr;
 }
 
+/*     
+    Function: addCommandArg
+
+	Purpose: find the distance from a point of the string to the next space
+	???????????????
+	Input: command: 
+           commandString: 
+           start: passed to next function
+           len: passed to next function
+	
+	Return: -1 on error
+            0 otherwise
+            
+    Assumptions and Limitations:
+*/
 int addCommandArg(Command *command, const char *commandString, int start, int len)
 {
     command->argc++;
@@ -247,6 +475,17 @@ int addCommandArg(Command *command, const char *commandString, int start, int le
     return 0;
 }
 
+/*     
+    Function: runCommandLine
+
+	Purpose: Create a child proccess and run command in that proccess
+
+	Input: commandLine: command line containing information on user input
+	
+	Return: 
+            
+    Assumptions and Limitations:
+*/
 void runCommandLine(CommandLine *commandLine)
 {
     int pid;
@@ -280,6 +519,19 @@ cleanup:
         waitForChildren(commandLine);
 }
 
+/*     
+    Function: createPipe
+
+	Purpose: attempt to create pipe
+
+	Input: commandLine: holds location of pipe
+           pipeIndex: reference to which pipe is being interacted with
+	
+	Return: -1 on error
+            0 otherwise
+            
+    Assumptions and Limitations:
+*/
 int createPipe(CommandLine *commandLine, int pipeIndex)
 {
     int error = pipe(commandLine->pipes[pipeIndex]);
@@ -291,6 +543,18 @@ int createPipe(CommandLine *commandLine, int pipeIndex)
     return error;
 }
 
+/*     
+    Function: closePipe
+
+	Purpose: close pipe
+
+	Input: commandLine: holds location of pipe
+           pipeIndex: reference to which pipe is being interacted with
+	
+	Return: 
+            
+    Assumptions and Limitations:
+*/
 void closePipe(CommandLine *commandLine, int pipeIndex)
 {
     close(commandLine->pipes[pipeIndex][INPUT]);
@@ -313,12 +577,37 @@ int runCommand(CommandLine *commandLine, int commandIndex)
     return 0;
 }
 
+/*     
+    Function: reDirectRequired
+
+	Purpose: check if command needs redirect
+
+	Input: commandLine: reference to input and output flags
+           commandIndex: reference to which command is being operated
+	
+	Return: ???????
+            
+    Assumptions and Limitations:
+*/
 int reDirectRequired(CommandLine *commandLine, int commandIndex)
 {
     return ((commandIndex == 0 && commandLine->input.flag) ||
             (commandIndex == commandLine->commandc - 1 && commandLine->output.flag));
 }
 
+/*     
+    Function: reDirectCommand
+
+	Purpose: send output of one proocess to the input of another
+
+	Input: commandLine: reference to input and output location
+           commandIndex: reference to which command is being operated
+	
+	Return: -1 on error
+            0 otherwise
+            
+    Assumptions and Limitations:
+*/
 int reDirectCommand(CommandLine *commandLine, int commandIndex)
 {
     int fd;
@@ -350,6 +639,18 @@ int reDirectCommand(CommandLine *commandLine, int commandIndex)
     return 0;
 }
 
+/*     
+    Function: pipeCommand
+
+	Purpose: ???????????
+
+	Input: commandLine: reference to pipe location
+           commandIndex: reference to which command is being operated
+	
+	Return:
+            
+    Assumptions and Limitations:
+*/
 void pipeCommand(CommandLine *commandLine, int commandIndex)
 {
     if (commandIndex < commandLine->commandc - 1)
@@ -367,6 +668,17 @@ void pipeCommand(CommandLine *commandLine, int commandIndex)
     }
 }
 
+/*     
+    Function: closePipesParent
+
+	Purpose: close pipes for parent proccess
+
+	Input: commandLine: reference to which command is being operated
+	
+	Return:
+            
+    Assumptions and Limitations:
+*/
 void closePipesParent(CommandLine *commandLine)
 {
     for (int i = 0; i < 2 && i < commandLine->pipesOpen; i++)
@@ -376,6 +688,17 @@ void closePipesParent(CommandLine *commandLine)
     }
 }
 
+/*     
+    Function: waitForChildren
+
+	Purpose: pause parent proccess
+
+	Input: commandLine: keep track of number of childProcesses
+	
+	Return:
+            
+    Assumptions and Limitations:
+*/
 void waitForChildren(CommandLine *commandLine)
 {
     int error = 0;
