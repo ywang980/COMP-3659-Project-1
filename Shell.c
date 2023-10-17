@@ -1,15 +1,15 @@
 /**
-* Name(s): 		Andy Wang, Micheal Myer, Vincent Ha
-* Emails: 		ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
-* Course: 		COMP 3659 - 001
+* Name(s): 	Andy Wang, Micheal Myer, Vincent Ha
+* Emails: 	ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
+* Course: 	COMP 3659 - 001
 * Instructor: 	Marc Schroeder
 * Assignment: 	Assignment 01
 * Source File: 	Shell.c
 * Due Date: 	October 6, 2023
 *
-* Purpose:		A program that emulates the Linux shell
+* Purpose:	A program that emulates the Linux shell
 *
-* Details:		Will prompt user for commands and upon recieving a valid common execute
+* Details:	Will prompt user for commands and upon recieving a valid common execute
 *               the corresponding instruction. This will continue until exit command is
 *               entered which will then cause the program to terminate.
 *
