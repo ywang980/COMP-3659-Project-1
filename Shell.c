@@ -7,7 +7,7 @@
  * Source File: Shell.c
  * Due Date: 	October 17, 2023
  *
- * Purpose:	A program that emulates the Linux shell
+ * Purpose:	    A program that emulates the Linux shell
  *
  * Details:	Will prompt user for commands and upon recieving a valid common execute
  *          the corresponding instruction. This will continue until exit command is
@@ -76,7 +76,7 @@ int readCommandLine(char *commandLineStr)
 
     Input: buffer: buffer space to hold input
 
-???	Return: 1 on succesful read
+??? Return: 1 on succesful read
             0 otherwise
 
     Assumptions and Limitations:
