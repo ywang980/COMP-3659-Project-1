@@ -1,25 +1,20 @@
 /**
- * Name(s): Andy Wang, Micheal Myer, Vincent Ha
- * Emails: ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
- * Course: COMP 3659 - 001
+ * Name(s):     Andy Wang, Michael Myer, Vincent Ha
+ * Emails:      ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
+ * Course:      COMP 3659 - 001
  * Instructor: 	Marc Schroeder
  * Assignment: 	Assignment 01
  * Source File: String.c
- * Due Date: 	October 6, 2023
+ * Due Date: 	October 17, 2023
  *
  * Purpose:	A library with various functions for string operation.
- *
- * Details:
- *
- * Assumptions and Limitations:
- *
  */
 #include "String.h"
 
 /*
-    Function: mystrlen
-
-    Purpose: count length of string
+*   Function: mystrlen
+*
+*   Purpose:  count length of string
 */
 int mystrlen(const char *str)
 {
@@ -32,13 +27,13 @@ int mystrlen(const char *str)
 }
 
 /*
-    Function: mystrcmp
-
-    Purpose: compare two strings lexicographically up to specified number of characters
-
-    Return: 0 if strings are equal
-            1 if str1 is bigger
-            -1 if str2 is bigger
+*   Function: mystrcmp
+*
+*   Purpose:  compare two strings lexicographically up to specified number of characters
+*
+*   Return:   0 if strings are equal
+*             1 if str1 is bigger
+*            -1 if str2 is bigger
 */
 int mystrncmp(const char *str1, const char *str2, int num)
 {
@@ -61,13 +56,13 @@ int mystrncmp(const char *str1, const char *str2, int num)
 }
 
 /*
-    Function: mystrchr
-
-    Purpose: check if a string contains at least one instance of the specified character
-    starting from the given index
-
-    Return: 1 if character is in string
-            0 otherwise
+*   Function: mystrchr
+*
+*   Purpose:  check if a string contains at least one instance of the specified character
+*             starting from the given index
+*
+*   Return:   1 if character is in string
+*             0 otherwise
 */
 int mystrchr(const char *str, int start, char target)
 {
@@ -81,11 +76,11 @@ int mystrchr(const char *str, int start, char target)
 }
 
 /*
-    Function: allocateStr
-
-    Purpose: allocate heap space for string of specified length
-
-    Return: pointer to string pointing at heap
+*   Function: allocateStr
+*
+*   Purpose:  allocate heap space for string of specified length
+*
+*   Return:   pointer to string pointing at heap
 */
 char *allocateStr(int len)
 {
@@ -96,9 +91,9 @@ char *allocateStr(int len)
 }
 
 /*
-    Function: mystrncpy
-
-    Purpose: copy len bytes of src string to dst string
+*   Function: mystrncpy
+*
+*   Purpose:  copy len bytes of src string to dst string
 */
 void mystrncpy(const char *src, char *dst, int len)
 {
@@ -112,9 +107,9 @@ void mystrncpy(const char *src, char *dst, int len)
 }
 
 /*
-    Function: printError
-
-    Purpose: print error message to user
+*   Function: printError
+*
+*   Purpose:  print error message to user
 */
 void printError(const char *msg)
 {
