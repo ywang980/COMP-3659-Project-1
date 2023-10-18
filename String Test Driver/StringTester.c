@@ -1,3 +1,23 @@
+/**
+* Name(s): 	Andy Wang, Michael Myer, Vincent Ha
+* Emails: 	ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
+* Course: 	COMP 3659 - 001
+* Instructor: 	Marc Schroeder
+* Assignment: 	Assignment 01
+* Source File: 	StringTester.c
+* Due Date: 	October 17, 2023
+*
+* Purpose:	A program that test the String module
+*
+* Details:	Will prompt user for which function they would like to test, then loop
+*           through the selected function allowing users to test different imput
+*           parameters.
+*
+* Assumptions and Limitations: 
+*           All input and output for the test driver is performed using the C standard library
+*/
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -108,7 +128,7 @@ void testChar()
     printf("\nEnter a string (max 25 characters): ");
     scanf("%s", string);
     printf("Enter a target character: ");
-    scanf("%c", &target);
+    scanf("%c", &target); //consume buffered whitespace
     scanf("%c", &target);
     printf("Enter starting index: ");
     scanf("%d", &start);
@@ -121,7 +141,7 @@ void testChar()
         printf("\nEnter a string (max 25 characters): ");
         scanf("%s", string);
         printf("Enter a target character: ");
-        scanf("%c", &target);
+        scanf("%c", &target); //consume buffered whitespace
         scanf("%c", &target);
         printf("Enter starting index: ");
         scanf("%d", &start);
