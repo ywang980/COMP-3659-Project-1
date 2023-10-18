@@ -28,7 +28,7 @@ int main()
 
     initializeCommandLine(&commandLine);
     validCommandLineLen = readCommandLine(commandLineStr);
-    while (mystrncmp(commandLineStr, exitPrompt, mystrlen(exitPrompt)) != 0 && commandLineStr[mystrlen(exitPrompt) != '\n'])
+    while (mystrncmp(commandLineStr, exitPrompt, mystrlen(exitPrompt)) != 0)
     {
         if (validCommandLineLen)
         {
