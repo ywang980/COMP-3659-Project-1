@@ -34,12 +34,15 @@ int main()
 
     while (option != 0)
     {
-        printf("\nPlease select which function you'd like to test:\n%s\n%s\n%s\n%s", "1 - mystrlen", "2 - mystrncmp", "3 - mystrchr", "4 - mystrncpy");
+        printf("\nPlease select which function you'd like to test:\n%s\n%s\n%s\n%s\n%s\n", "1 - mystrlen", "2 - mystrncmp", "3 - mystrchr", "4 - mystrncpy", "0 - Exit Program");
         printf("\nOption #: ");
         scanf("%d", &option);
 
         switch(option)
         {
+            case 0:
+                break;
+
             case 1:
                 testLength();
                 break;
@@ -57,7 +60,7 @@ int main()
                 break;
 
             default:
-                printf("Please select an option from the four functions.");
+                printf("Please select a valid option.");
         }
     }
 
