@@ -8,6 +8,7 @@
  * Due Date: 	October 6, 2023
  *
  * Purpose:	A library with various functions for string operation.
+ *
  * Details:
  *
  * Assumptions and Limitations:
