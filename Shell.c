@@ -53,11 +53,6 @@ int main()
     return 0;
 }
 
-/*
-    Function: readCommandLine
-
-    Purpose: prompt for and attempt to read user input
-*/
 int readCommandLine(char *commandLineStr)
 {
     write(1, promptMsg, mystrlen(promptMsg));
@@ -83,11 +78,6 @@ int readInput(char *buffer)
     return 1;
 }
 
-/*
-    Function flushInput
-
-    Purpose: empty input buffer
-*/
 void flushInput(char *buffer)
 {
     while (read(0, buffer, MAX_BUFFER_LEN) >= MAX_BUFFER_LEN)
