@@ -14,10 +14,10 @@
  *          entered which will then cause the program to terminate.
  *
  *          Invalid commands or improperly formatted command line input will print
- *          an appropriate error message. 
+ *          an appropriate error message.
  *
  * Assumptions and Limitations:
- *              Valid commands are assumed to include the full file path. 
+ *              Valid commands are assumed to include the full file path.
  *                  eg: instead of 'ls', '/usr/bin/ls'.
  */
 #include "Shell.h"
@@ -29,12 +29,13 @@ int main()
     int validCommandLineLen;
 
     initializeCommandLine(&commandLine);
-    validCommandLineLen = readCommandLine(commandLineStr);
-    while (mystrncmp(commandLineStr, exitPrompt, mystrlen(exitPrompt)) != 0)
+    validCommandLineLen = readCommandLine(commandLineStr);                   // check command line length does not exceed buffer limit
+    while (mystrncmp(commandLineStr, exitPrompt, mystrlen(exitPrompt)) != 0) // must type exactly "exit" to terminate shell
     {
         if (validCommandLineLen)
         {
-            if (tokenizeCommandLine(&commandLine, commandLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1)
+
+            if (tokenizeCommandLine(&commandLine, commandLineStr) != -1 && tokenizeCommandAll(&commandLine) != -1) // validate and tokenize user input
             {
                 // printCommandLine(&commandLine);
                 runCommandLine(&commandLine);
@@ -55,13 +56,7 @@ int main()
 /*
     Function: readCommandLine
 
-    Purpose: prompt user then call readInput to read user message
-
-    Input:
-
-    Return: pointer to where user input is stored
-
-    Assumptions and Limitations:
+    Purpose: prompt for and attempt to read user input
 */
 int readCommandLine(char *commandLineStr)
 {
@@ -72,14 +67,10 @@ int readCommandLine(char *commandLineStr)
 /*
     Function: readInput
 
-    Purpose: read user message return succesful or failed read
+    Purpose: read user input from standard input stream to supplied buffer
 
-    Input: buffer: buffer space to hold input
-
-??? Return: 1 on succesful read
-            0 otherwise
-
-    Assumptions and Limitations:
+    Return: 1 on succesful read
+            0 on buffer overflow
 */
 int readInput(char *buffer)
 {
@@ -95,13 +86,7 @@ int readInput(char *buffer)
 /*
     Function flushInput
 
-    Purpose: empty out buffer
-
-    Input: buffer: buffer to empty
-
-    Return:
-
-    Assumptions and Limitations:
+    Purpose: empty input buffer
 */
 void flushInput(char *buffer)
 {
