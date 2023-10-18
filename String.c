@@ -17,7 +17,7 @@
 #include "String.h"
 
 /*       
-    Function: mystrlen
+	Function: mystrlen
     
 	Purpose: count length of string
 	
@@ -25,7 +25,7 @@
 	
 	Return: amount of characters in string
 
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 int mystrlen(const char *str)
 {
@@ -38,19 +38,19 @@ int mystrlen(const char *str)
 }
 
 /*       
-    Function: mystrcmp
+	Function: mystrcmp
     
 	Purpose: compare two strings lexicographically
 	
-	Input: str1: string to be compared
-           str2: string to be compared
-           num: number of characters to be compared
+	Input: 	str1: string to be compared
+		str2: string to be compared
+           	num: number of characters to be compared
 	
 	Return: 0 if strings are equal
-            1 if str1 os bigger
-            -1 if str2 is bigger
+            	1 if str1 os bigger
+           	-1 if str2 is bigger
 
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 int mystrncmp(const char *str1, const char *str2, int num)
 {
@@ -73,18 +73,18 @@ int mystrncmp(const char *str1, const char *str2, int num)
 }
 
 /*       
-    Function: mystrchr
+	Function: mystrchr
     
 	Purpose: check if a string has a character
 	
-	Input: str: string to be checked
-           start: point of string to start checking
-           target: character that is being searched for
+	Input: 	str: string to be checked
+           	start: point of string to start checking
+           	target: character that is being searched for
 	
 	Return: 1 if character is in string
-            0 otherwise
+            	0 otherwise
             
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 int mystrchr(const char *str, int start, char target)
 {
@@ -98,15 +98,15 @@ int mystrchr(const char *str, int start, char target)
 }
 
 /*       
-    Function: allocateStr
+	Function: allocateStr
     
 	Purpose: allocate space for string
 	
-	Input: len: length of string
+	Input: 	len: length of string
 	
 	Return: pointer to string pointing at heap
 
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 char *allocateStr(int len)
 {
@@ -117,17 +117,17 @@ char *allocateStr(int len)
 }
 
 /*       
-    Function: mystrncpy
+	Function: mystrncpy
     
 	Purpose: copy a string
 	
-	Input: src: string to be copied
-           dst: destanation of copy
-           len: length of string to be copied
+	Input: 	src: string to be copied
+           	dst: destanation of copy
+           	len: length of string to be copied
 	
 	Return:
 
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 void mystrncpy(const char *src, char *dst, int len)
 {
@@ -141,15 +141,15 @@ void mystrncpy(const char *src, char *dst, int len)
 }
 
 /*       
-    Function: printError
+	Function: printError
     
 	Purpose: print error message to user
 	
-	Input: msg: error message to be printed to screen
+	Input: 	msg: error message to be printed to screen
 	
 	Return:
 
-    Assumptions and Limitations:
+	Assumptions and Limitations:
 */
 void printError(const char *msg)
 {
