@@ -51,16 +51,17 @@ int tokenizeCommandLine(CommandLine *, const char *);
 int flushWhiteSp(const char *, int);
 int isSpChar(char);
 int findNextSpChar(const char *, int);
-int findfPathEnd(const char *, int);
-int validSpChar(const char *, char);
 int findNextInput(const char *, int);
 
 int processSpChar(CommandLine *, const char *, int, int, int, char *);
 int spCharFlagsOff(CommandLine *);
+int findfPathEnd(const char *, int);
 int addCommand(CommandLine *, const char *, int, int);
 void addFilePath(CommandLine *, const char *, char, int, int);
 void toggleSpCharFlag(CommandLine *, char);
 void updateValSpChar(char *, char);
+
+int validSpChar(const char *, char);
 
 int tokenizeCommandAll(CommandLine *);
 int tokenizeCommand(Command *, const char *);
