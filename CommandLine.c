@@ -1,32 +1,49 @@
 /**
-* Name(s): 		Andy Wang, Micheal Myer, Vincent Ha
-* Emails: 		ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
-* Course: 		COMP 3659 - 001
-* Instructor: 	Marc Schroeder
-* Assignment: 	Assignment 01
-* Source File: 	CommandLine.c
-* Due Date: 	October 6, 2023
-*
-* Purpose:		A library with functions focused on proccessing the command line
-*???????????
-* Details:		Will split user input into tokens to be proccessed.
-*
-* Assumptions and Limitations: 
-*              All valid user input will be specify the file path of the command
-*/
+ * Name(s): 	Andy Wang, Micheal Myer, Vincent Ha
+ * Emails: 		ywang980@mtroyal.ca, mmyer488@mtroyal.ca, vha117@mtroyal.ca
+ * Course: 		COMP 3659 - 001
+ * Instructor: 	Marc Schroeder
+ * Assignment: 	Assignment 01
+ * Source File: CommandLine.c
+ * Due Date: 	October 6, 2023
+ *
+ * Purpose:		A library with functions relating to the tokenization and operation
+ * of a command line.
+ *
+ * Details:		A command line is defined as a complex structure with the following fields:
+ *              -An array of commands, which is a struct itself
+ *                  -Each command structure has 4 fields: the untokenized command string
+ *                   (of 1 command only), an argument vector array, an argument counter,
+ *                   and the process ID it will have once fork() has been called
+ *              -A command counter
+ *              -An input and output redirect structure, each of which has 2 fields:
+ *                  -A flag indicating the presence of an input/output redirect
+ *                  -The corresponding filepath to redirect to
+ *              -A background flag
+ *              -A 2D-array of pipes (column count is fixed at 2)
+ *              -Counters for the pipes/child processes the parent process has opened/forked
+ *
+ * Assumptions and Limitations:
+ *              -Valid input must be of the form: command_1 | command_n | < input.txt > output.txt &
+ *                  -Pipelining, redirect, and background jobs must be separated by exactly
+ *                  1 of the corresponding special characters ('|', '<', '>', '&')
+ *                  -All commands must appear before the redirect/background section
+ *                  -Redirect/background characters must appear in the following order:
+ *                      input redirect --> output redirect --> background
+ *                  -Command arguments must be separated by at least 1 whitespace
+ *                  -The redirect file path may not contain whitespace
+ *
+ *              -In the event of invalid input, the shell will not explicitly state the source
+ *               of the input error
+ *              -Absolute file paths must be provided to actually run the commands themselves
+ */
 
 #include "CommandLine.h"
 
-/*       
+/*
     Function: initializeCommandLine
-    
-	Purpose: initialize values in commandLine
-	
-	Input: commnadLine: commandLine to be initialized
-	
-	Return: 
 
-    Assumptions and Limitations:
+    Purpose: initialize default command line fields
 */
 void initializeCommandLine(CommandLine *commandLine)
 {
@@ -40,15 +57,33 @@ void initializeCommandLine(CommandLine *commandLine)
     commandLine->childProcessCount = 0;
 }
 
-/*       
+/*
     Function: tokenizeCommandLine
-    
-	Purpose: split up command line input to proccesable pieces 
-	???????
-	Input: commnadLine: check max command size
-           commandLineStr: string to be proccessed
-	
-	Return: 0 on succesful tokenization
+
+    Purpose: parse command line input into 4 possible components: individual commands,
+    input redirect, output redirect, and background job
+
+    Details: the general algorithm of this function is:
+            -Find index of user input (start)
+                -First character that isn't a special character or whitespace
+            -Find index of special character immediately trailing this input (curr)
+                -('|', '<', '>', '&') or a newline
+            -Process the input from start to curr with relation to the special
+            character at curr
+            -Find index of next user input, repeat while this is possible (i.e. trailing special
+            character isn't a newline)
+
+            Throughout this process, the input is validated in these areas:
+            -The next user input parsed is valid
+            -Special characters respect sequence of: pipeline->input->output->background
+                -Implemented by declaring an array where each index is a unique valid special character
+                -When earlier special characters are no longer valid, the array is truncated
+            -Command count within limit
+
+    Input: commandLine: CommandLine struct to split input into
+           commandLineStr: user input string
+
+    Return: 0 on succesful tokenization
             -1 on error
 
     Assumptions and Limitations:
@@ -62,16 +97,16 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
         return -1;
     else
     {
-        int curr = findNextSpChar(commandLineStr, start);
-        int next = findNextInput(commandLineStr, curr);
+        int curr = findNextSpChar(commandLineStr, start); // Find trailing special char
+        int next = findNextInput(commandLineStr, curr);   // Find/validate next user input
 
-        if (next == -1) // Non-consecutive special char
+        if (next == -1)
             return -1;
         while (start != next)
         {
-            if (!validSpChar(valSpChar, commandLineStr[curr])) // Valid special char
+            if (!validSpChar(valSpChar, commandLineStr[curr])) // Valid special character sequence
                 return -1;
-            if (processSpChar(commandLine, commandLineStr, start, curr, next, valSpChar) == -1) // Exceed max commands limit
+            if (processSpChar(commandLine, commandLineStr, start, curr, next, valSpChar) == -1) // commandc <= MAX_COMMANDS
                 return -1;
 
             start = next;
@@ -85,17 +120,13 @@ int tokenizeCommandLine(CommandLine *commandLine, const char *commandLineStr)
     return 0;
 }
 
-/*       
+/*
     Function: flushWhiteSp
-    
-	Purpose: clear part of a string to the end
-    
-	Input: str: string that will be cleared
-           start: starting point in string to be cleared
-	
-	Return: amount of string cleared
 
-    Assumptions and Limitations:
+    Purpose: from the specified starting point of a given string, find the next
+    non-whitespace character
+
+    Return: index of first non-whitespace character
 */
 int flushWhiteSp(const char *str, int start)
 {
@@ -105,33 +136,18 @@ int flushWhiteSp(const char *str, int start)
     return curr;
 }
 
-/*       
-    Function: isSpChar
-    
-	Purpose: check which special character a character is
-	
-	Input: target: character to be checked
-	
-	Return: ASCII value of special character
-
-    Assumptions and Limitations:
-*/
 int isSpChar(char target)
 {
     return (target == '|' || target == '>' || target == '<' || target == '&' || target == '\n');
 }
 
-/*       
+/*
     Function: findNextSpChar
-    
-	Purpose: move through a string until a special character is hit
-	
-	Input: str: string to be searched through
-           start: starting point of string
-	
-	Return: the amount of characters gone through
 
-    Assumptions and Limitations:
+    Purpose: from the specified starting point of a given string, find the next
+    special character
+
+    Return: index of first special character
 */
 int findNextSpChar(const char *str, int start)
 {
@@ -143,58 +159,24 @@ int findNextSpChar(const char *str, int start)
     return curr;
 }
 
-/*       
-    Function: findfPathEnd
-    
-	Purpose: go through string until a whitespace is hit
-	
-	Input: str: string to be proccessed through
-           start: starting point of string
-	
-	Return: the amount of characters gone through
-
-    Assumptions and Limitations:
-*/
-int findfPathEnd(const char *str, int start)
-{
-    int curr = start;
-    for (; str[curr] != ' ' && !isSpChar(str[curr]); curr++)
-        ;
-
-    return curr;
-}
-
-/*  ????????????
-    Function: validSpChar
-    
-	Purpose: call mystrchr going through the beginning of string
-	
-	Input: valSpChar: string to be proccessed through
-           spChar: spChar being searched for
-	
-	Return: position of spchar
-
-    Assumptions and Limitations:
-*/
-int validSpChar(const char *valSpChar, char spChar)
-{
-    return mystrchr(valSpChar, 0, spChar);
-}
-
-/*  
+/*
     Function: findNextInput
-    ???????????????????
-	Purpose: 
-	
-	Input: 
-	
-	Return: 
 
-    Assumptions and Limitations:
+    Purpose: from the index of the special character, find and validate the next
+    possible user input
+
+    Details: validity of next user input depends on current special character
+        -'&': whitespace/newline only
+        -Any other special character: next non-whitespace character from curr isn't another
+        special character (i.e. non-consecutive special characters)
+
+    Return: index of next input's start on success
+            index of special character if end of command line
+            -1 if next input is invalid
 */
 int findNextInput(const char *commandLineStr, int curr)
 {
-    if (commandLineStr[curr] == '\n')
+    if (commandLineStr[curr] == '\n') // end of command line
         return curr;
 
     int next = flushWhiteSp(commandLineStr, curr + 1);
@@ -210,22 +192,30 @@ int findNextInput(const char *commandLineStr, int curr)
     else
         return -1;
 }
-/*  
-    Function: processSpChar
-    
-	Purpose: sort proccessing depnding on special character recoeved
-	
-	Input: commandLine: Proccessing through command line
-           commandLineStr: ?????????????
-           start: passed to other functions
-           curr: passed to other functions
-           next: passed to other functions
-           valSpChar: special character to be checked
-	
-	Return: 0 on success
-            non-0 on error?????????
 
-    Assumptions and Limitations:
+/*
+    Function: processSpChar
+
+    Purpose: process the input from start to curr with relation to the special character at curr
+
+    Details:
+        -Since commands must appear before redirect/background requests, can only attempt
+        to add a command while all relevant flags in the CommandLine struct are off
+        -Upon encountering a special character that isn't a pipeline, at least 1 flag
+        will be turned on
+            -List of valid special characters are truncated as appropriate
+        -By extension, any non-whitespace, non-newline user input once a flag is on
+        can only be a file path
+
+    Input: commandLine: CommandLine struct to split input into
+           commandLineStr: user input string
+           start: start of user input
+           curr: index of special character
+           next: start of next user input - used to find the file path
+           valSpChar: array of valid special characters
+
+    Return: 0 on success
+            -1 on error - only possible error is exceeding command limit when attempting to add a command
 */
 int processSpChar(CommandLine *commandLine, const char *commandLineStr, int start, int curr, int next, char *valSpChar)
 {
@@ -250,36 +240,37 @@ int processSpChar(CommandLine *commandLine, const char *commandLineStr, int star
     return error;
 }
 
-/*       
-    Function: spCharFlagsOFF
-    
-	Purpose: turn character flags off
-	
-	Input: commandLine: adjusting commandLine properties
-	
-	Return: ??????????????
-
-    Assumptions and Limitations:
-*/
 int spCharFlagsOff(CommandLine *commandLine)
 {
     return (!commandLine->input.flag && !commandLine->output.flag && !commandLine->bgFlag);
 }
 
-/*     
-    Function: addCommand
-    ??????????????????
-	Purpose: 
-	
-	Input: commandLine: 
-           commandLineStr:
-           start:
-           len:
-	
-	Return: -1 on error
-            0 otherwise
+/*
+    Function: findfPathEnd
 
-    Assumptions and Limitations:
+    Purpose: for an index denoting the start of a file path, find the index immediately
+    following this file path
+
+    Return: index of first whitespace/special character (open is whitespace sensitive)
+*/
+int findfPathEnd(const char *str, int start)
+{
+    int curr = start;
+    for (; str[curr] != ' ' && !isSpChar(str[curr]); curr++)
+        ;
+
+    return curr;
+}
+
+/*
+    Function: addCommand
+
+    Purpose: first allocate heap space, then add an untokenized command string to the CommandLine
+    struct. The command string's length and starting index in the overall command line are supplied
+    as parameters.
+
+    Return: 0 on success
+            -1 on command count overflow
 */
 int addCommand(CommandLine *commandLine, const char *commandLineStr, int start, int len)
 {
@@ -298,19 +289,10 @@ int addCommand(CommandLine *commandLine, const char *commandLineStr, int start, 
     return 0;
 }
 
-/*     
+/*
     Function: addFilePath
 
-	Purpose: Adjust input or output of command
-	
-	Input: commandLine: to be changed
-           commandLineStr: string containing command
-           start: passed to next function
-           len: passed to next function
-	
-	Return:
- 
-    Assumptions and Limitations:
+    Purpose: identical to addCommand, but for the file path fields instead
 */
 void addFilePath(CommandLine *commandLine, const char *commandLineStr, char reDirSign, int start, int len)
 {
@@ -324,19 +306,20 @@ void addFilePath(CommandLine *commandLine, const char *commandLineStr, char reDi
     mystrncpy(&commandLineStr[start], reDirect->filePath, len);
 }
 
-/*     
+/*
+    Function: validSpChar
+
+    Purpose: ensure the current special character is valid (i.e. respects specified input sequence)
+*/
+int validSpChar(const char *valSpChar, char spChar)
+{
+    return mystrchr(valSpChar, 0, spChar);
+}
+
+/*
     Function: toggleSpCharFlag
 
-	Purpose: set flag for special character in command line
-	
-	Input: commandLine: to be changed
-           commandLineStr: string containing command
-           start: passed to next function
-           len: passed to next function
-	
-	Return: 
-
-    Assumptions and Limitations:
+    Purpose: set flag for specified special character in CommandLine struct
 */
 void toggleSpCharFlag(CommandLine *commandLine, char spChar)
 {
@@ -348,17 +331,17 @@ void toggleSpCharFlag(CommandLine *commandLine, char spChar)
         commandLine->bgFlag = 1;
 }
 
-/*     
+/*
     Function: updateValSpChar
 
-	Purpose: Clear characters from string until special character
-	
-	Input: valSpChar: String to be adjusted
-           spChar: special character in string
-	
-	Return:
+    Purpose: update list of valid special characters by truncating the valSpChar array.
 
-    Assumptions and Limitations:
+    Details: since any special character that isn't a pipeline can only appear once,
+    it is invalid once it has been processed. Furthermore, any special characters appearing
+    earlier in the sequence are also invalid.
+    
+    For example, output redirect may be processed only once, after which both it and input redirect
+    (which must appear before output redirect) are invalid.
 */
 void updateValSpChar(char *valSpChar, char spChar)
 {
@@ -368,14 +351,14 @@ void updateValSpChar(char *valSpChar, char spChar)
     valSpChar[i] = '0';
 }
 
-/*     
+/*
     Function: tokenizeCommandAll
 
-	Purpose: ?????
-	
-	Input: commandLine: command line containing command
-	
-	Return: -1 on error
+    Purpose: ?????
+
+    Input: commandLine: command line containing command
+
+    Return: -1 on error
             0 otherwise
 
     Assumptions and Limitations:
@@ -392,17 +375,17 @@ int tokenizeCommandAll(CommandLine *commandLine)
     return 0;
 }
 
-/*     
+/*
     Function: tokenizeCommand
 
-	Purpose: ?????
-	
-	Input: command: command to be tokenized
+    Purpose: ?????
+
+    Input: command: command to be tokenized
            commandString:
-	
-	Return: -1 on error
+
+    Return: -1 on error
             0 otherwise
-            
+
     Assumptions and Limitations:
 */
 int tokenizeCommand(Command *command, const char *commandString)
@@ -423,16 +406,16 @@ int tokenizeCommand(Command *command, const char *commandString)
     return 0;
 }
 
-/*     
+/*
     Function: findNextDelim
 
-	Purpose: find the distance from a point of the string to the next space
-	
-	Input: str: string to be checked
+    Purpose: find the distance from a point of the string to the next space
+
+    Input: str: string to be checked
            start: start of string to be proccessed
-	
-	Return: return length of string
-            
+
+    Return: return length of string
+
     Assumptions and Limitations:
 */
 int findNextDelim(const char *str, int start)
@@ -443,19 +426,19 @@ int findNextDelim(const char *str, int start)
     return curr;
 }
 
-/*     
+/*
     Function: addCommandArg
 
-	Purpose: find the distance from a point of the string to the next space
-	???????????????
-	Input: command: 
-           commandString: 
+    Purpose: find the distance from a point of the string to the next space
+    ???????????????
+    Input: command:
+           commandString:
            start: passed to next function
            len: passed to next function
-	
-	Return: -1 on error
+
+    Return: -1 on error
             0 otherwise
-            
+
     Assumptions and Limitations:
 */
 int addCommandArg(Command *command, const char *commandString, int start, int len)
@@ -475,15 +458,15 @@ int addCommandArg(Command *command, const char *commandString, int start, int le
     return 0;
 }
 
-/*     
+/*
     Function: runCommandLine
 
-	Purpose: Create a child proccess and run command in that proccess
+    Purpose: Create a child proccess and run command in that proccess
 
-	Input: commandLine: command line containing information on user input
-	
-	Return: 
-            
+    Input: commandLine: command line containing information on user input
+
+    Return:
+
     Assumptions and Limitations:
 */
 void runCommandLine(CommandLine *commandLine)
@@ -519,17 +502,17 @@ cleanup:
         waitForChildren(commandLine);
 }
 
-/*     
+/*
     Function: createPipe
 
-	Purpose: attempt to create pipe
+    Purpose: attempt to create pipe
 
-	Input: commandLine: holds location of pipe
+    Input: commandLine: holds location of pipe
            pipeIndex: reference to which pipe is being interacted with
-	
-	Return: -1 on error
+
+    Return: -1 on error
             0 otherwise
-            
+
     Assumptions and Limitations:
 */
 int createPipe(CommandLine *commandLine, int pipeIndex)
@@ -543,16 +526,16 @@ int createPipe(CommandLine *commandLine, int pipeIndex)
     return error;
 }
 
-/*     
+/*
     Function: closePipe
 
-	Purpose: close pipe
+    Purpose: close pipe
 
-	Input: commandLine: holds location of pipe
+    Input: commandLine: holds location of pipe
            pipeIndex: reference to which pipe is being interacted with
-	
-	Return: 
-            
+
+    Return:
+
     Assumptions and Limitations:
 */
 void closePipe(CommandLine *commandLine, int pipeIndex)
@@ -577,16 +560,16 @@ int runCommand(CommandLine *commandLine, int commandIndex)
     return 0;
 }
 
-/*     
+/*
     Function: reDirectRequired
 
-	Purpose: check if command needs redirect
+    Purpose: check if command needs redirect
 
-	Input: commandLine: reference to input and output flags
+    Input: commandLine: reference to input and output flags
            commandIndex: reference to which command is being operated
-	
-	Return: ???????
-            
+
+    Return: ???????
+
     Assumptions and Limitations:
 */
 int reDirectRequired(CommandLine *commandLine, int commandIndex)
@@ -595,17 +578,17 @@ int reDirectRequired(CommandLine *commandLine, int commandIndex)
             (commandIndex == commandLine->commandc - 1 && commandLine->output.flag));
 }
 
-/*     
+/*
     Function: reDirectCommand
 
-	Purpose: send output of one proocess to the input of another
+    Purpose: send output of one proocess to the input of another
 
-	Input: commandLine: reference to input and output location
+    Input: commandLine: reference to input and output location
            commandIndex: reference to which command is being operated
-	
-	Return: -1 on error
+
+    Return: -1 on error
             0 otherwise
-            
+
     Assumptions and Limitations:
 */
 int reDirectCommand(CommandLine *commandLine, int commandIndex)
@@ -639,16 +622,16 @@ int reDirectCommand(CommandLine *commandLine, int commandIndex)
     return 0;
 }
 
-/*     
+/*
     Function: pipeCommand
 
-	Purpose: ???????????
+    Purpose: ???????????
 
-	Input: commandLine: reference to pipe location
+    Input: commandLine: reference to pipe location
            commandIndex: reference to which command is being operated
-	
-	Return:
-            
+
+    Return:
+
     Assumptions and Limitations:
 */
 void pipeCommand(CommandLine *commandLine, int commandIndex)
@@ -668,15 +651,15 @@ void pipeCommand(CommandLine *commandLine, int commandIndex)
     }
 }
 
-/*     
+/*
     Function: closePipesParent
 
-	Purpose: close pipes for parent proccess
+    Purpose: close pipes for parent proccess
 
-	Input: commandLine: reference to which command is being operated
-	
-	Return:
-            
+    Input: commandLine: reference to which command is being operated
+
+    Return:
+
     Assumptions and Limitations:
 */
 void closePipesParent(CommandLine *commandLine)
@@ -688,15 +671,15 @@ void closePipesParent(CommandLine *commandLine)
     }
 }
 
-/*     
+/*
     Function: waitForChildren
 
-	Purpose: pause parent proccess
+    Purpose: pause parent proccess
 
-	Input: commandLine: keep track of number of childProcesses
-	
-	Return:
-            
+    Input: commandLine: keep track of number of childProcesses
+
+    Return:
+
     Assumptions and Limitations:
 */
 void waitForChildren(CommandLine *commandLine)
